@@ -1,0 +1,180 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+
+local LocalPlayer = Players.LocalPlayer
+local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+local workspaceCam = workspace.CurrentCamera
+
+local BUTTON_SIZE = UDim2.new(0, 64, 0, 64)
+local BUTTON_START_POS = UDim2.new(0, 18, 0.5, -32)
+local BUTTON_MIN_MARGIN = 8
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "DZ_Hub_GUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+screenGui.IgnoreGuiInset = false
+screenGui.DisplayOrder = 999999
+
+local toggleButton = Instance.new("ImageButton")
+toggleButton.Name = "DZToggle"
+toggleButton.Size = BUTTON_SIZE
+toggleButton.Position = BUTTON_START_POS
+toggleButton.AnchorPoint = Vector2.new(0, 0)
+toggleButton.BackgroundColor3 = Color3.fromRGB(255, 180, 200)
+toggleButton.BackgroundTransparency = 0.25
+toggleButton.Image = "rbxassetid://111987325183061"
+toggleButton.ScaleType = Enum.ScaleType.Fit
+toggleButton.AutoButtonColor = true
+toggleButton.Active = true
+toggleButton.Draggable = true
+toggleButton.Parent = screenGui
+
+local btnCorner = Instance.new("UICorner", toggleButton)
+btnCorner.CornerRadius = UDim.new(1, 0)
+
+local btnStroke = Instance.new("UIStroke", toggleButton)
+btnStroke.Thickness = 3
+btnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+RunService.Heartbeat:Connect(function()
+	local hue = (tick() * 0.45) % 1
+	btnStroke.Color = Color3.fromHSV((tick() * 0.15) % 1, 0.3, 1)
+end)
+
+local function clampButtonOnScreen()
+	local viewport = workspaceCam and workspaceCam.ViewportSize or Vector2.new(1920,1080)
+	local absPos = toggleButton.AbsolutePosition
+	local absSize = toggleButton.AbsoluteSize
+	local newX = math.clamp(absPos.X, BUTTON_MIN_MARGIN, viewport.X - absSize.X - BUTTON_MIN_MARGIN)
+	local newY = math.clamp(absPos.Y, BUTTON_MIN_MARGIN, viewport.Y - absSize.Y - BUTTON_MIN_MARGIN)
+	toggleButton.Position = UDim2.new(0, newX, 0, newY)
+end
+RunService.RenderStepped:Connect(clampButtonOnScreen)
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 180, 0, 240)
+mainFrame.Position = UDim2.new(0.5, -90, 0.5, -110)
+mainFrame.BackgroundColor3 = Color3.fromRGB(255, 190, 210)
+mainFrame.BackgroundTransparency = 0.3
+mainFrame.BorderSizePixel = 0
+mainFrame.Visible = false
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
+
+local mainCorner = Instance.new("UICorner", mainFrame)
+mainCorner.CornerRadius = UDim.new(0, 12)
+
+local title = Instance.new("TextLabel", mainFrame)
+title.Size = UDim2.new(1,0,0,30)
+title.Position = UDim2.new(0,0,0,0)
+title.BackgroundTransparency = 1
+title.Text = "☪ Midnight | PvP"
+title.Font = Enum.Font.Arcade
+title.TextSize = 16
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+local listLayout = Instance.new("UIListLayout", mainFrame)
+listLayout.Padding = UDim.new(0,6)
+listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+listLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+	mainFrame.Size = UDim2.new(0, mainFrame.Size.X.Offset, 0, math.max(80, listLayout.AbsoluteContentSize.Y + 40))
+end)
+
+local function createMenuButton(text, color, textColor)
+	local b = Instance.new("TextButton")
+	b.Size = UDim2.new(0, 150, 0, 32)
+	b.BackgroundColor3 = color or Color3.fromRGB(255, 160, 190)
+	b.Text = text
+	b.Font = Enum.Font.Arcade
+	b.TextSize = 16
+	b.TextColor3 = textColor or Color3.fromRGB(255, 240, 250)
+	b.Parent = mainFrame
+
+	local c = Instance.new("UICorner", b)
+	c.CornerRadius = UDim.new(0,8)
+
+	local s = Instance.new("UIStroke", b)
+	s.Thickness = 1.5
+	s.Color = Color3.fromRGB(255, 220, 235)
+
+	RunService.Heartbeat:Connect(function()
+		local t = tick() * 0.4
+		b.TextColor3 = Color3.fromHSV((t + math.random()) % 1, 0.25, 1)
+	end)
+
+	return b
+end
+
+local btnJump = createMenuButton("Jump Booster", Color3.fromRGB(255, 175, 195), Color3.fromRGB(230, 200, 255))
+local btnSpeed = createMenuButton("Speed Booster", Color3.fromRGB(255, 160, 190), Color3.fromRGB(255, 255, 255))
+local btnDiscord = createMenuButton("TikTok", Color3.fromRGB(255, 150, 200), Color3.fromRGB(255, 210, 230))
+
+local label = Instance.new("TextLabel", mainFrame)
+label.Size = UDim2.new(1,0,0,20)
+label.BackgroundTransparency = 1
+label.Text = "@zoevln1"
+label.Font = Enum.Font.Arcade
+label.TextSize = 14
+label.TextColor3 = Color3.fromRGB(255, 240, 250)
+label.TextStrokeTransparency = 0.7
+
+local uiVisible = false
+toggleButton.MouseButton1Click:Connect(function()
+	uiVisible = not uiVisible
+	mainFrame.Visible = uiVisible
+end)
+
+do
+	local running = false
+	local conn
+	local BASE_SPEED = 27
+	btnSpeed.MouseButton1Click:Connect(function()
+		running = not running
+		if running then
+			btnSpeed.BackgroundColor3 = Color3.fromRGB(255, 100, 160)
+			conn = RunService.Heartbeat:Connect(function()
+				local char = LocalPlayer.Character
+				if not char then return end
+				local hum = char:FindFirstChildOfClass("Humanoid")
+				local hrp = char:FindFirstChild("HumanoidRootPart")
+				if not hum or not hrp then return end
+				local dir = hum.MoveDirection
+				if dir.Magnitude > 0 then
+					hrp.AssemblyLinearVelocity = Vector3.new(dir.X * BASE_SPEED, hrp.AssemblyLinearVelocity.Y, dir.Z * BASE_SPEED)
+				end
+			end)
+		else
+			if conn then conn:Disconnect() conn = nil end
+			btnSpeed.BackgroundColor3 = Color3.fromRGB(255, 160, 190)
+		end
+	end)
+end
+
+do
+	local active = false
+	local NORMAL_JUMP = 50
+	local BOOST_JUMP = 75
+	btnJump.MouseButton1Click:Connect(function()
+		active = not active
+		local char = LocalPlayer.Character
+		if char and char:FindFirstChildOfClass("Humanoid") then
+			local hum = char:FindFirstChildOfClass("Humanoid")
+			hum.UseJumpPower = true
+			hum.JumpPower = active and BOOST_JUMP or NORMAL_JUMP
+		end
+		btnJump.BackgroundColor3 = active and Color3.fromRGB(255, 100, 160) or Color3.fromRGB(255, 175, 195)
+	end)
+end
+
+btnDiscord.MouseButton1Click:Connect(function()
+	if setclipboard then setclipboard("https://www.tiktok.com/@emii.ina1") end
+	btnDiscord.Text = "Copiado!"
+	task.wait(1.5)
+	btnDiscord.Text = "TikTok"
+end)
